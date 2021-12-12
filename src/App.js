@@ -2,6 +2,28 @@ import {useDispatch, useSelector} from "react-redux"
 import { combineReducers } from "redux"
 import { useState } from "react"
 
+//todas las funciones de reducer tienen que ser funciones puras, no se puede escribir codigo asincrono
+// no se puede llamar a una api, una fecha, etc
+// para eso es mejor hacer uso de los middlewares
+
+export const asyncMiddleware = store => next => action => {
+    if (typeof action === "function") {
+        return action(store.dispatch, store.getState)
+    }
+    return next(action)
+}
+
+export const fetchThunk = () => async dispatch => {
+    dispatch({type: "todos/pending"})
+    try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/todos")
+        const data = await response.json()
+        const todos = data.slice(0, 10) //slice sirve para generar copias de un arreglo, el primer numero indica desde donde cortar y el segundo indica cuanto cortar, usamos slice debido a que la api trae demaciados todos
+        dispatch({ type: "todos/fulfilled", payload: todos})
+    } catch (e) {
+        dispatch({type: "todos/error", error: e.message})    
+    }
+}
 
 export const filterReducer = (state = "all", action) => {
     switch (action.type) {
@@ -14,6 +36,9 @@ export const filterReducer = (state = "all", action) => {
 
 export const todosReducer = (state = [], action) => {
     switch (action.type) {
+        case "todos/fulfilled": {
+            return action.payload
+        }
         case "todo/add": {
             return state.concat({ ...action.payload})
         }
@@ -36,38 +61,6 @@ export const reducer = combineReducers({ //combina todos los reducers de nuestra
     filter: filterReducer
 })
 
-
-
-/* export const reducer = (state = initialState, action ) => {
-    switch (action.type) {
-        case "todo/add": {
-            return {
-                ...state,
-                entities: state.entities.concat({ ...action.payload })
-            }
-        }
-        case "todo/complete": {
-            const newTodos = state.entities.map(todo => {
-                if (todo.id === action.payload.id) {
-                    return { ...todo, completed: !todo.completed}
-                }
-                return todo
-            })
-            return {
-                ...state,
-                entities: newTodos  
-            }
-        }
-        case "filter/set": {
-            return {
-                ...state,
-                filter: action.payload
-            }
-        }
-        default:
-            return state
-    }
-} */
 
 const selectTodos = state => {
     const { entities, filter } = state
@@ -118,6 +111,7 @@ const App = () => {
             <button onClick={() => dispatch({ type: "filter/set", payload: "all"})} >Mostrar todos</button>
             <button onClick={() => dispatch({ type: "filter/set", payload: "complete"})} >Completados</button>
             <button onClick={() => dispatch({ type: "filter/set", payload: "incomplete"})} >Imcompletos</button>
+            <button onClick={() => dispatch(fetchThunk())} >Fetch</button>
             <ul>
                 {todos.map(todo => <TodoItem key={todo.id} todo={todo}/>)}
             </ul>

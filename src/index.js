@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App, { reducer } from './App';
+import App, { reducer, asyncMiddleware } from './App';
 import { Provider } from "react-redux"
-import { createStore } from "redux"
+import { createStore, applyMiddleware } from "redux"
 
 
-const store = createStore(reducer)
+const store = createStore(reducer, applyMiddleware(asyncMiddleware))
 
 ReactDOM.render(
   <React.StrictMode>
