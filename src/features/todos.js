@@ -1,19 +1,14 @@
 import { combineReducers } from "redux"
-import { makeFetchingReducer, makeSetReducer, reduceReducers, makeCrudReducer } from "./utils"
+import { asyncMac, mac, mat, makeFetchingReducer, makeSetReducer, reduceReducers, makeCrudReducer } from "./utils"
 
-export const setPending= () => {
-    return {
-        type: "todos/pending"
-    }
-}
 
-export const setFulfilled = payload => ({ type: "todos/fulfilled", payload})
+const asyncTodos = mat("todos")
 
-export const setError = e => ({ type: "todos/error", error: e.message }) 
+const [setPending, setFulfilled, setError] = asyncMac(asyncTodos)
 
-export const setComplete = (payload) => ({ type: "todo/complete", payload})
+export const setComplete = mac("todo/complete", "payload")
 
-export const setFilter = payload => ({type: "filter/set", payload})
+export const setFilter = mac("filter/set", "payload")
 
 export const fetchThunk = () => async dispatch => {
     dispatch(setPending())
@@ -23,17 +18,13 @@ export const fetchThunk = () => async dispatch => {
         const todos = data.slice(0, 10) //slice sirve para generar copias de un arreglo, el primer numero indica desde donde cortar y el segundo indica cuanto cortar, usamos slice debido a que la api trae demaciados todos
         dispatch(setFulfilled(todos))
     } catch (e) {
-        dispatch(setError())    
+        dispatch(setError(e.message))    
     }
 }
 
 export const filterReducer = makeSetReducer(["filter/set"])
 
-export const fetchingReducer = makeFetchingReducer([
-    "todos/pending",
-    "todos/fulfilled",
-    "todos/rejected"
-])
+export const fetchingReducer = makeFetchingReducer(asyncTodos)
 
 
 
